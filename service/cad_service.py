@@ -313,7 +313,7 @@ def process_cad_task(
             log.info(f"PDF 上传 COS 成功: {uploaded_pdf_key}")
             #temp_base
             # ==================== 清理临时文件 ====================False
-            cleanup_temp_files(temp_base, keep_files=False)
+            cleanup_temp_files(temp_base, keep_files=True)
 
             # ==================== 返回成功结果 ====================
             log.info(f"CAD 转换流程完成: {order_id}")
