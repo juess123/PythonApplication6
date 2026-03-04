@@ -6,61 +6,6 @@ from common.log import log
 ODA_EXE = r"C:\Program Files\ODA\ODAFileConverter 26.12.0\ODAFileConverter.exe"
 
 
-def dxfTodwg():
-    # 1️⃣ 输入 / 输出目录
-    in_dir = Path(r".\output").resolve()
-    out_dir = Path(r".\dwg").resolve()
-
-    if not in_dir.exists():
-        raise FileNotFoundError(f"输入目录不存在: {in_dir}")
-
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # 2️⃣ 找到所有 DXF
-    dxf_files = list(in_dir.glob("*.dxf"))
-    if not dxf_files:
-        print("⚠️ output 目录中没有 DXF 文件")
-        return
-
-    print(f"📄 发现 {len(dxf_files)} 个 DXF，开始转换…")
-
-    # 3️⃣ ODA 批量转换（一次）
-    cmd = [
-        ODA_EXE,
-        str(in_dir),  # 输入目录
-        str(out_dir),  # 输出目录
-        "ACAD2018",
-        "DWG",
-        "0",  # 不递归
-        "1",  # 覆盖
-    ]
-
-    subprocess.run(
-        cmd,
-        check=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NO_WINDOW,
-    )
-
-    # 4️⃣ 校验结果
-    success = []
-    failed = []
-
-    for dxf in dxf_files:
-        dwg = out_dir / (dxf.stem + ".dwg")
-        if dwg.exists():
-            success.append(dwg.name)
-        else:
-            failed.append(dxf.name)
-
-    # 5️⃣ 结果汇总
-    print(f"✅ 成功转换 {len(success)} 个 DWG")
-    if failed:
-        print("❌ 以下 DXF 转换失败:")
-        for name in failed:
-            print("   -", name)
-
 
 def dxf_to_dwg(dxf_dir: str, dwg_dir: str) -> tuple[bool, str]:
     """

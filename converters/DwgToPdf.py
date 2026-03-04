@@ -1,29 +1,12 @@
 ﻿import subprocess
-import sys
+
 import os
 from pathlib import Path
 
 from common.log import log
 
 
-def dwgTopdf():
-    core = Path(r"C:\Program Files\Autodesk\AutoCAD 2022\AcCoreConsole.exe")
 
-    dwg = Path(r".\dwg\test.dwg").resolve()
-    scr = Path(r".\run.scr").resolve()
-
-    for p in (core, dwg, scr):
-        if not p.exists():
-            raise FileNotFoundError(p)
-
-    cmd = [str(core), "/i", str(dwg), "/s", str(scr)]
-
-    print("Running:", " ".join(cmd))
-
-    subprocess.run(
-        cmd, check=True, cwd=str(dwg.parent), stdout=sys.stdout, stderr=sys.stderr
-    )
-    print("✅ AutoCAD Core Console 执行完成")
 
 
 def dwg_to_pdf(dwg_path: str, pdf_output_path: str, scr_path: str) -> str:
