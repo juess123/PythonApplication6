@@ -1,0 +1,25 @@
+# python
+__pycache__/
+*.pyc
+
+# virtual env
+.venv/
+
+# IDE
+.idea/
+.vs/
+
+# logs
+logs/
+
+# temp
+temp/
+
+# env
+.env
+
+# output
+output/
+
+# input
+input/
