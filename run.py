@@ -23,6 +23,7 @@ def main():
     # 初始化日志
     setup_loggings()
     logging.getLogger("ezdxf").setLevel(logging.WARNING)
+    logging.getLogger("pika").setLevel(logging.WARNING)   # 👈 加这一行
     log.info("=" * 60)
     log.info("CAD 任务消费者服务启动中...")
     log.info("=" * 60)

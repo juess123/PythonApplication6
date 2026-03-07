@@ -69,8 +69,8 @@ class CadTaskConsumer:
             self._channel.queue_declare(queue=self._queue_name, durable=True)
 
             # ⭐⭐⭐ 启动时清空历史任务 ⭐⭐⭐
-            log.warning(f"启动消费者，清空队列中的历史任务: {self._queue_name}")
-            self._channel.queue_purge(queue=self._queue_name)
+            #log.warning(f"启动消费者，清空队列中的历史任务: {self._queue_name}")
+            #self._channel.queue_purge(queue=self._queue_name)
 
             log.info(f"RabbitMQ 连接成功，监听队列: {self._queue_name}")
             return True
