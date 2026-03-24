@@ -33,22 +33,22 @@ def resolve_render_strategy(node, doc):
                     except:
                         pass
 
-    # -------- ¾ö²ßÂß¼­ --------
+    # -------- ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ --------
 
-    # ¢Ù fill:none
+    # ï¿½ï¿½ fill:none
     if has_fill_none:
-        return False, 7  # ²»ÕÚ±Î + Ö÷É«
-    # ¢Ú °ëÍ¸Ã÷
+        return False, 7  # ï¿½ï¿½ï¿½Ú±ï¿½ + ï¿½ï¿½É«
+    # ï¿½ï¿½ ï¿½ï¿½Í¸ï¿½ï¿½
     if has_transparent_fill:
         print("Ç³É«")
-        return False, 1  # ²»ÕÚ±Î + Ç³É«
-    # ¢Û ÊµÉ«Ìî³ä
+        return False, 1  # ï¿½ï¿½ï¿½Ú±ï¿½ + Ç³É«
+    # ï¿½ï¿½ ÊµÉ«ï¿½ï¿½ï¿½
     if has_fill:
-        return True, 7   # ÕÚ±Î + Ö÷É«
-    # ¢Ü ´¿Ãè±ß
+        return True, 7   # ï¿½Ú±ï¿½ + ï¿½ï¿½É«
+    # ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½
     if has_stroke:
-        return False, 7  # ²»ÕÚ±Î + Ö÷É«
-    # ¢Ý Ä¬ÈÏ
+        return False, 7  # ï¿½ï¿½ï¿½Ú±ï¿½ + ï¿½ï¿½É«
+    # ï¿½ï¿½ Ä¬ï¿½ï¿½
     return False, 7
 
 def draw_occlusion(geoms, msp, svg_to_mm):

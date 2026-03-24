@@ -1,6 +1,5 @@
 from geometry.clip import clip_contours_to_segments,classify_contours_by_clip
 from svg_model.style import parse_clip_id_from_style
-from kernel.logger import log
 from kernel.clip_stats import stat_inc
 from geometry.bbox import contour_to_bbox, point_in_bbox, is_bbox_clip
 import time

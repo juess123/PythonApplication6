@@ -8,8 +8,9 @@ from geometry.adapters import (
     rect_to_contours,
     polyline_to_contours,
     line_to_contours,
+    parse_path_d_multi_to_contours
 )
-from geometry.parse import parse_path_d_multi
+
 
 
 def get_element_bbox(node):
@@ -22,7 +23,7 @@ def get_element_bbox(node):
         d = node.attrib.get("d")
         if not d:
             return None
-        contours = parse_path_d_multi(d)
+        contours = parse_path_d_multi_to_contours(d)
 
     # -------- rect --------
     elif tag == "rect":

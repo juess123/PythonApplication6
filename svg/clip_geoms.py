@@ -1,5 +1,6 @@
 
 from geometry.parse import parse_path_d_multi
+from geometry.bezier import quad_bezier, cubic_bezier
 import re
 
 _CLIP_RE = re.compile(r"url\(#([^)]+)\)")
@@ -45,20 +46,60 @@ def resolve_clip_id(node):
 
 #下面两个是处理裁剪框的 
 def rect_to_contour(node, ndigits=6):
-    x = float(node.attrib.get("x", 0))
-    y = float(node.attrib.get("y", 0))
     w = float(node.attrib.get("width", 0))
     h = float(node.attrib.get("height", 0))
 
-    return [
-        (round(x, ndigits), round(y, ndigits)),
-        (round(x + w, ndigits), round(y, ndigits)),
-        (round(x + w, ndigits), round(y + h, ndigits)),
-        (round(x, ndigits), round(y + h, ndigits)),
+    # 👉 默认局部坐标
+    pts = [
+        (0, 0),
+        (w, 0),
+        (w, h),
+        (0, h),
     ]
+
+    transform = node.attrib.get("transform")
+
+    if transform and "matrix" in transform:
+        import re
+
+        nums = list(map(float, re.findall(r"[-\d.]+", transform)))
+        a, b, c, d, e, f = nums
+
+        def apply(p):
+            x, y = p
+            x_new = a*x + c*y + e
+            y_new = b*x + d*y + f
+            return (round(x_new, ndigits), round(y_new, ndigits))
+
+        pts = [apply(p) for p in pts]
+
+    return pts
+
+
+
+def path_to_contour(path, sample_n=10):
+    pts = []
+
+    for seg in path.segments:
+        if seg.type == "line":
+            pts.append(seg.p0)
+            pts.append(seg.p1)
+
+        elif seg.type == "cubic_bezier":
+            pts.extend(cubic_bezier(
+                seg.p0, seg.p1, seg.p2, seg.p3, sample_n
+            ))
+
+        elif seg.type == "quadratic_bezier":
+            pts.extend(cubic_bezier(
+                seg.p0, seg.p1, seg.p2, sample_n
+            ))
+
+    return pts
 
 def find_clip_geometries_from_defs(doc, ndigits=6):
     clip_geoms = {}
+
     defs_nodes = [n for n in doc.nodes if n.tag == "defs"]
     if not defs_nodes:
         return clip_geoms
@@ -75,13 +116,18 @@ def find_clip_geometries_from_defs(doc, ndigits=6):
             contours_all = []
 
             for child in getattr(node, "children", []):
+
+                # ===== path =====
                 if child.tag == "path":
                     d = child.attrib.get("d")
                     if not d:
                         continue
 
-                    contours = parse_path_d_multi(d)
-                    for contour in contours:
+                    paths = parse_path_d_multi(d)
+
+                    for path in paths:
+                        contour = path_to_contour(path)
+
                         if len(contour) < 3:
                             continue
 
@@ -89,10 +135,12 @@ def find_clip_geometries_from_defs(doc, ndigits=6):
                             (round(x, ndigits), round(y, ndigits))
                             for x, y in contour
                         ]
+
                         contours_all.append(contour_r)
 
+                # ===== rect =====
                 elif child.tag == "rect":
-                    contour = rect_to_contour(child, ndigits)
+                    contour = rect_to_contour(child)
                     contours_all.append(contour)
 
             if contours_all:

@@ -1,4 +1,4 @@
-
+import math
 import re
 #能包住它的最小矩形
 def contour_to_bbox(contour):
@@ -78,5 +78,60 @@ def is_simple_path(d: str) -> bool:
     # 3️⃣ 命令数量不能太多
     if len(commands) > 20:
         return False
+
+    return True
+
+#判断是否是 矩形
+def is_rectangle(pts, angle_tol=1e-2, length_tol=1e-6):
+    """
+    pts: [(x,y), ...] 必须闭合（5个点）
+    angle_tol: 垂直容忍度（越大越宽松）
+    length_tol: 长度容忍
+    """
+
+    # 1️⃣ 点数检查（闭合）
+    if len(pts) != 5:
+        return False
+
+    # 2️⃣ 构造4条边向量
+    def vec(a, b):
+        return (b[0] - a[0], b[1] - a[1])
+
+    v = [vec(pts[i], pts[i+1]) for i in range(4)]
+
+    # 3️⃣ 向量长度
+    def length(v):
+        return math.hypot(v[0], v[1])
+
+    lengths = [length(e) for e in v]
+
+    # 防止退化边
+    if any(l < length_tol for l in lengths):
+        return False
+
+    # 4️⃣ 点积（判断垂直）
+    def dot(a, b):
+        return a[0]*b[0] + a[1]*b[1]
+
+    # 归一化点积（避免尺度影响）
+    def is_perpendicular(a, b):
+        return abs(dot(a, b)) / (length(a)*length(b)) < angle_tol
+
+    # 5️⃣ 叉积（判断平行）
+    def cross(a, b):
+        return a[0]*b[1] - a[1]*b[0]
+
+    def is_parallel(a, b):
+        return abs(cross(a, b)) / (length(a)*length(b)) < angle_tol
+
+    # 6️⃣ 相邻边垂直
+    if not is_perpendicular(v[0], v[1]): return False
+    if not is_perpendicular(v[1], v[2]): return False
+    if not is_perpendicular(v[2], v[3]): return False
+    if not is_perpendicular(v[3], v[0]): return False
+
+    # 7️⃣ 对边平行
+    if not is_parallel(v[0], v[2]): return False
+    if not is_parallel(v[1], v[3]): return False
 
     return True

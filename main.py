@@ -136,7 +136,7 @@ if __name__ == "__main__":
     start = time.perf_counter()
     svgTodxf()
     end = time.perf_counter()
-    print(f"svgTodxf() 耗时: {end - start:.6f} 秒")
-    dxfTodwg()
-    dwgTopdf()
+    # print(f"svgTodxf() 耗时: {end - start:.6f} 秒")
+    # dxfTodwg()
+    # dwgTopdf()
  
