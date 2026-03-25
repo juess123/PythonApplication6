@@ -45,7 +45,7 @@ def flatten_rotated_rect(elem):
 
     x1, y1 = min(xs), min(ys)
     x2, y2 = max(xs), max(ys)
-
+    
     # ✨ 重写 rect
     elem.attrib.pop("transform", None)
     elem.attrib["x"] = f"{x1:.6f}"

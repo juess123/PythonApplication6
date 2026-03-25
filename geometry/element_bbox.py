@@ -3,7 +3,7 @@
 from lxml import etree
 
 from geometry.bbox import contour_to_bbox
-from geometry.adapters import (
+from svg_model.geometry_builder import (
     polygon_to_contours,
     rect_to_contours,
     polyline_to_contours,

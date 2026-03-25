@@ -1,8 +1,7 @@
 from lxml import etree
 from svg_model.model import SvgDocument, SvgRoot, SvgDefs
-from svg_model.geometry import init_svg_root_geometry
+from svg_model.svg_root_parser import init_svg_root_geometry
 from svg_model.style import extract_style_defs
-from svg_model.preprocess import remove_global_background_rect
 from svg_model.tree import build_node_tree
 from svg_model.clean import clean_svg_tree
 

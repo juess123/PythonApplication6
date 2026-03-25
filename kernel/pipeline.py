@@ -1,9 +1,9 @@
 from svg.global_clip import find_global_clip_bbox
-from svg.clip_geoms import find_clip_geometries_from_defs
-from kernel.clip_context import ClipContext, NoClipContext
+from svg_model.geometry_builder import find_clip_geometries_from_defs
+from clip.context import ClipContext
 from kernel.node import process_path_node, process_polygon_node, process_rect_node, process_polyline_node, process_line_node,compute_image_effective_bbox
 from kernel.writer import draw_global_bbox_rect,draw_image_rect
-from svg.viewport import make_svg_to_mm_transform
+from svg_model.transform import make_svg_to_mm_transform
 
 def dispatch_from_first_g(doc, msp, color=7):
     # 1️⃣ 找第一个 <g>
@@ -25,7 +25,7 @@ def dispatch_from_first_g(doc, msp, color=7):
     svg_to_mm = make_svg_to_mm_transform(doc.root)
 
     # （可选）全局框只画一次
-    draw_global_bbox_rect(global_clip, msp, svg_to_mm, color=7)
+    draw_global_bbox_rect(global_clip, msp, svg_to_mm, color=1)
    
     # ==============================
     # 2️⃣ 正式分发

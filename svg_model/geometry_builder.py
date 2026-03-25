@@ -1,58 +1,140 @@
-﻿from geometry.bezier import quad_bezier,cubic_bezier
+from geometry.parse import parse_path_d_multi
+from geometry.bezier import quad_bezier, cubic_bezier
 import re
-# 这些函数做的事只有一件：
-# 把不同 SVG 图元（polygon / rect / polyline / line）
-# 统一转换成“contours（点序列）”这种内部几何表示。
-def vec(a, b):
-    return (b[0] - a[0], b[1] - a[1])
+# clipPath → 几何轮廓字典
+def find_clip_geometries_from_defs(doc, ndigits=6):
+    clip_geoms = {}
 
-def dot(a, b):
-    return a[0]*b[0] + a[1]*b[1]
+    defs_nodes = [n for n in doc.nodes if n.tag == "defs"]
+    if not defs_nodes:
+        return clip_geoms
+    for defs in defs_nodes:
+        for node in getattr(defs, "children", []):
+            if node.tag != "clipPath":
+                continue
 
-def length(v):
-    return (v[0]**2 + v[1]**2) ** 0.5
+            clip_id = node.attrib.get("id")
+            if not clip_id:
+                continue
+
+            contours_all = []
+
+            for child in getattr(node, "children", []):
+
+                # ===== path =====
+                if child.tag == "path":
+                    d = child.attrib.get("d")
+                    if not d:
+                        continue
+
+                    paths = parse_path_d_multi(d)
+
+                    for path in paths:
+                        contour = path_to_contour(path)
+
+                        if len(contour) < 3:
+                            continue
+
+                        contour_r = [
+                            (round(x, ndigits), round(y, ndigits))
+                            for x, y in contour
+                        ]
+
+                        contours_all.append(contour_r)
+
+                # ===== rect =====
+                elif child.tag == "rect":
+                    contour = rect_to_contour(child)
+                    contours_all.append(contour)
+
+            if contours_all:
+                clip_geoms[clip_id] = contours_all
+
+    return clip_geoms
 
 
-def is_rectangle(points, eps=1e-3):
-    if len(points) != 4:
-        return False
-
-    # 👉 保证顺序一致（很重要）
-    points = sort_points_clockwise(points)
-
-    # ===== 1️⃣ 判断四个角都是直角 =====
-    for i in range(4):
-        a = points[i]
-        b = points[(i + 1) % 4]
-        c = points[(i + 2) % 4]
-
-        ab = vec(a, b)
-        bc = vec(b, c)
-
-        if abs(dot(ab, bc)) > eps * (length(ab) * length(bc)):
-            return False
-
-    # ===== 2️⃣ 对边长度相等 =====
-    d0 = length(vec(points[0], points[1]))
-    d1 = length(vec(points[1], points[2]))
-    d2 = length(vec(points[2], points[3]))
-    d3 = length(vec(points[3], points[0]))
-
-    if abs(d0 - d2) > eps or abs(d1 - d3) > eps:
-        return False
-
-    return True
 
 
-def sort_points_clockwise(points):
-    cx = sum(p[0] for p in points) / len(points)
-    cy = sum(p[1] for p in points) / len(points)
 
-    def angle(p):
-        import math
-        return math.atan2(p[1] - cy, p[0] - cx)
 
-    return sorted(points, key=angle)
+
+
+
+
+
+# 把 <rect> 转成一个轮廓（contour）
+# 输入（SVG）<rect width="100" height="50" transform="..."/>
+# [
+#     (x0, y0),
+#     (x1, y1),
+#     (x2, y2),
+#     (x3, y3)
+# ]
+def rect_to_contour(node, ndigits=6):
+    w = float(node.attrib.get("width", 0))
+    h = float(node.attrib.get("height", 0))
+
+    # 👉 默认局部坐标
+    pts = [
+        (0, 0),
+        (w, 0),
+        (w, h),
+        (0, h),
+    ]
+    transform = node.attrib.get("transform")
+
+    if transform and "matrix" in transform:
+        import re
+
+        nums = list(map(float, re.findall(r"[-\d.]+", transform)))
+        a, b, c, d, e, f = nums
+
+        def apply(p):
+            x, y = p
+            x_new = a*x + c*y + e
+            y_new = b*x + d*y + f
+            return (round(x_new, ndigits), round(y_new, ndigits))
+
+        pts = [apply(p) for p in pts]
+
+    return pts
+
+# 把一个 path（贝塞尔/直线）转成“点”
+def paths_to_contours(paths, sample_n=10):
+    return [path_to_contour(p, sample_n) for p in paths]
+
+def path_to_contour(path, sample_n=10):
+    pts = []
+    for i, seg in enumerate(path.segments):
+
+        if i == 0:
+            pts.append(seg.p0)
+
+        if seg.type == "line":
+            pts.append(seg.p1)
+
+        elif seg.type == "cubic_bezier":
+            curve = cubic_bezier(
+                seg.p0, seg.p1, seg.p2, seg.p3, sample_n
+            )
+            pts.extend(curve[1:])
+
+        elif seg.type == "quadratic_bezier":
+            curve = quad_bezier(
+                seg.p0, seg.p1, seg.p2, sample_n
+            )
+            pts.extend(curve[1:])
+
+    # ===== 闭合处理 =====
+    if path.closed and pts and pts[0] != pts[-1]:
+        pts.append(pts[0])
+
+    return pts
+
+
+
+
+
 
 def parse_points(points_str):
     """
@@ -104,24 +186,6 @@ def polygon_to_contours(node, eps=1e-6):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def rect_to_contours(node):
     try:
         x = float(node.attrib.get("x", 0))
@@ -129,6 +193,7 @@ def rect_to_contours(node):
         w = float(node.attrib.get("width", 0))
         h = float(node.attrib.get("height", 0))
     except Exception:
+        
         return []
 
     if w <= 0 or h <= 0:
@@ -177,6 +242,7 @@ def line_to_contours(node):
 
     return [[(x1, y1), (x2, y2)]]
 
+
 def _is_number(s: str) -> bool:
     try:
         float(s)
@@ -195,6 +261,9 @@ def _require_numbers(tokens, i, n, d, cmd):
                 f" token = {tokens[i + k] if i + k < len(tokens) else 'EOF'}\n"
                 f" tokens = {tokens}\n"
             )
+
+
+
 
 def parse_path_d_multi_to_contours(d):
     """
@@ -361,3 +430,12 @@ def parse_path_d_multi_to_contours(d):
     if current:
         paths.append(current)
     return paths
+# SVG
+#  ├── rect  ─────────────→ rect_to_contour
+#  ├── path  ─────────────→ path_to_contour
+#  │                         ↓
+#  │                   paths_to_contours
+#  │
+#  └── defs/clipPath ───→ find_clip_geometries_from_defs
+#                              ↓
+#                       {clip_id: contours}

@@ -33,8 +33,82 @@ def point_in_polygon(point, polygon):
                 inside = not inside
 
         x0, y0 = x1, y1
-
     return inside
+#检测线段是否穿越bbox
+def segments_intersect(p1, p2, p3, p4):
+    def cross(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+    d1 = cross(p1, p2, p3)
+    d2 = cross(p1, p2, p4)
+    d3 = cross(p3, p4, p1)
+    d4 = cross(p3, p4, p2)
+
+    return (d1 * d2 < 0) and (d3 * d4 < 0)
+def segment_intersects_bbox(p0, p1, bbox):
+    xmin, ymin, xmax, ymax = bbox
+
+    # ---- 快速排除 ----
+    if max(p0[0], p1[0]) < xmin or min(p0[0], p1[0]) > xmax:
+        return False
+    if max(p0[1], p1[1]) < ymin or min(p0[1], p1[1]) > ymax:
+        return False
+
+    # ---- 任一点在 bbox 内 ----
+    if point_in_bbox(p0, bbox) or point_in_bbox(p1, bbox):
+        return True
+
+    # ---- 与 bbox 边相交 ----
+    edges = [
+        ((xmin, ymin), (xmax, ymin)),
+        ((xmax, ymin), (xmax, ymax)),
+        ((xmax, ymax), (xmin, ymax)),
+        ((xmin, ymax), (xmin, ymin)),
+    ]
+
+    for e0, e1 in edges:
+        if segments_intersect(p0, p1, e0, e1):
+            return True
+
+    return False
+
+#检测线段是否穿越polygon
+def segments_intersect(p1, p2, p3, p4):
+    def cross(a, b, c):
+        return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+
+    d1 = cross(p1, p2, p3)
+    d2 = cross(p1, p2, p4)
+    d3 = cross(p3, p4, p1)
+    d4 = cross(p3, p4, p2)
+
+    return (d1 * d2 < 0) and (d3 * d4 < 0)
+def segment_intersects_polygon(p0, p1, polygon):
+    n = len(polygon)
+    if n < 2:
+        return False
+
+    # ===== 1️⃣ 任一点在 polygon 内 =====
+    if point_in_polygon(p0, polygon) or point_in_polygon(p1, polygon):
+        return True
+
+    # ===== 2️⃣ 与 polygon 边是否相交 =====
+    for i in range(n):
+        q0 = polygon[i]
+        q1 = polygon[(i + 1) % n]
+
+        if segments_intersect(p0, p1, q0, q1):
+            return True
+
+    return False
+
+
+
+
+
+
+
+
 #如果两个矩形有重叠，那重叠区域的边界在哪里
 def intersect_bbox(b1, b2):
     """
@@ -80,6 +154,10 @@ def is_simple_path(d: str) -> bool:
         return False
 
     return True
+
+
+
+
 
 #判断是否是 矩形
 def is_rectangle(pts, angle_tol=1e-2, length_tol=1e-6):
@@ -135,3 +213,61 @@ def is_rectangle(pts, angle_tol=1e-2, length_tol=1e-6):
     if not is_parallel(v[1], v[3]): return False
 
     return True
+
+
+#s是否是圆
+
+def is_circle_path(path, tol=1.0):
+    if not path.closed:
+        return False
+
+    segs = path.segments
+
+    if len(segs) not in (4, 8):
+        return False
+
+    if not all(s.type == "cubic_bezier" for s in segs):
+        return False
+
+    # ===== 只取端点（关键！）=====
+    pts = []
+    for s in segs:
+        pts.append(s.p0)
+        pts.append(s.p3)
+
+    # ===== 求中心 =====
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+
+    cx = (min(xs) + max(xs)) / 2
+    cy = (min(ys) + max(ys)) / 2
+
+    # ===== 半径一致性 =====
+    rs = [math.hypot(x - cx, y - cy) for x, y in pts]
+    r_avg = sum(rs) / len(rs)
+
+    for r in rs:
+        if abs(r - r_avg) > tol:
+            return False
+
+    return True
+# 提取圆参数
+def get_circle_from_path(path):
+    pts = []
+    for s in path.segments:
+        pts.append(s.p0)
+        pts.append(s.p3)
+
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+
+    cx = (min(xs) + max(xs)) / 2
+    cy = (min(ys) + max(ys)) / 2
+
+    rs = [math.hypot(x - cx, y - cy) for x, y in pts]
+    r = sum(rs) / len(rs)
+
+    return (cx, cy), r
+
+def path_is_closed(d):
+    return 'z' in d.lower()

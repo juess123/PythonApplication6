@@ -1,6 +1,4 @@
-from geometry.bbox import point_in_bbox, point_in_polygon,is_bbox_clip
-
-#polygon 精裁剪层
+from geometry.bbox import point_in_polygon,is_bbox_clip
 def clip_segment_to_polygon(p0, p1, polygon):
     """
     返回：
@@ -25,6 +23,8 @@ def clip_segment_to_polygon(p0, p1, polygon):
         return intersections[0], intersections[1]
 
     return None
+
+
 def segment_polygon_intersections(p0, p1, polygon):
     """
     返回线段 p0-p1 与 polygon 边界的交点列表
@@ -62,6 +62,7 @@ def segment_polygon_intersections(p0, p1, polygon):
 
     uniq.sort(key=t_of)
     return uniq
+
 def segment_intersection(p0, p1, p2, p3, eps=1e-9):
     """
     判断线段 p0-p1 与 p2-p3 是否相交
@@ -104,6 +105,7 @@ def segment_intersection(p0, p1, p2, p3, eps=1e-9):
         return (px, py)
 
     return None
+
 def clip_contours_to_polygon_segments(contours, polygon):
     segments = []
 
@@ -123,52 +125,31 @@ def clip_contours_to_polygon_segments(contours, polygon):
             segments.append((q0, q1))
 
     return segments
-#入口函数 
-def clip_contours_to_segments(contours, clip):
-    """
-    clip:
-      - bbox: (xmin, ymin, xmax, ymax)
-      - polygon: [(x,y), ...]
-    """
-    if is_bbox_clip(clip):
-        return clip_contours_to_bbox_segments(contours, clip)
-    else:
-        return clip_contours_to_polygon_segments(contours, clip)
-def classify_contours_by_clip(contours, clip):
-    """
-    返回：
-    - "inside"
-    - "partial"
-    - "outside"
-    clip:
-      - bbox: (xmin, ymin, xmax, ymax)
-      - polygon: [(x, y), ...]
-    """
-    inside = False
-    outside = False
 
-    is_bbox = (
-        isinstance(clip, tuple)
-        and len(clip) == 4
-    )
-   
+def clip_contours_to_bbox_segments(contours, bbox):
+    """
+    对 contours 里的每一条线段做 bbox 裁剪
+    返回：List[ (p0, p1) ]
+    """
+    segments = []
+
     for contour in contours:
-        for p in contour:
-            if is_bbox:
-                in_clip = point_in_bbox(p, clip)
-            else:
-                in_clip = point_in_polygon(p, clip)
+        if len(contour) < 2:
+            continue
 
-            if in_clip:
-                inside = True
-            else:
-                outside = True
+        for i in range(len(contour) - 1):
+            p0 = contour[i]
+            p1 = contour[i + 1]
 
-    if inside and not outside:
-        return "inside"
-    if inside and outside:
-        return "partial"
-    return "outside"
+            clipped = clip_segment_to_bbox(p0, p1, bbox)
+            if clipped is None:
+                continue
+
+            q0, q1 = clipped
+            segments.append((q0, q1))
+
+    return segments
+
 #bbox 快裁剪层
 def clip_segment_to_bbox(p0, p1, bbox):
     """
@@ -215,29 +196,16 @@ def clip_segment_to_bbox(p0, p1, bbox):
     cy1 = y0 + u2 * dy
 
     return (cx0, cy0), (cx1, cy1)
-def clip_contours_to_bbox_segments(contours, bbox):
+
+
+#入口函数 
+def clip_contours_to_segments(contours, clip):
     """
-    对 contours 里的每一条线段做 bbox 裁剪
-    返回：List[ (p0, p1) ]
+    clip:
+      - bbox: (xmin, ymin, xmax, ymax)
+      - polygon: [(x,y), ...]
     """
-    segments = []
-
-    for contour in contours:
-        if len(contour) < 2:
-            continue
-
-        for i in range(len(contour) - 1):
-            p0 = contour[i]
-            p1 = contour[i + 1]
-
-            clipped = clip_segment_to_bbox(p0, p1, bbox)
-            if clipped is None:
-                continue
-
-            q0, q1 = clipped
-            segments.append((q0, q1))
-
-    return segments
-
-
-
+    if is_bbox_clip(clip):
+        return clip_contours_to_bbox_segments(contours, clip)
+    else:
+        return clip_contours_to_polygon_segments(contours, clip)

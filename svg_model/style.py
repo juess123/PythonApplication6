@@ -55,3 +55,22 @@ def parse_clip_id_from_style(style: str | None) -> str | None:
         return None
 
     return m.group(1)
+
+def get_clip_id_from_node(node):
+    """
+    从 node 提取 clip-path id
+    支持：
+      - clip-path 属性
+      - style 内 clip-path
+    """
+
+    # ① 优先属性
+    clip = node.attrib.get("clip-path")
+    if clip:
+        m = _CLIP_RE.search(clip)
+        if m:
+            return m.group(1)
+
+    # ② fallback style
+    style = node.attrib.get("style", "")
+    return parse_clip_id_from_style(style)

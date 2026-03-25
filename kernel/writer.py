@@ -1,4 +1,5 @@
 from geometry.bezier import quad_bezier,cubic_bezier
+from geometry.bbox import  is_circle_path, get_circle_from_path
 def draw_global_bbox_rect(bbox, msp, svg_to_mm, color):
     xmin, ymin, xmax, ymax = bbox
 
@@ -74,17 +75,25 @@ def draw_clip_contour(contour, msp, svg_to_mm, color=7, close=True):
 
 
 
+def draw_circle_path(path, msp, svg_to_mm, color=7):
 
-def draw_paths(paths, msp, svg_to_mm=1.0, color=7):
-    for path in paths:
-        draw_path(path, msp, svg_to_mm, color)
+    center, radius = get_circle_from_path(path)
 
-def draw_path(path, msp, svg_to_mm=1.0, color=7):
-    for seg in path.segments:
-        draw_path_segment(seg, msp, svg_to_mm, color)
+    # ===== 坐标转换 =====
+    center_mm = svg_to_mm(center)
 
+    # ⚠️ 半径必须单独算
+    test_pt = (center[0] + radius, center[1])
+    test_pt_mm = svg_to_mm(test_pt)
 
+    radius_mm = test_pt_mm[0] - center_mm[0]
 
+    # ===== 画圆 =====
+    msp.add_circle(
+        center_mm,
+        radius_mm,
+        dxfattribs={"color": color}
+    )
 def draw_path_segment(seg, msp, svg_to_mm, color=7):
 
     def to_mm(p):
@@ -113,6 +122,23 @@ def draw_path_segment(seg, msp, svg_to_mm, color=7):
             fit_points=pts,
             dxfattribs={"color": color}
         )
+def draw_paths(paths, msp, svg_to_mm=1.0, color=7):
+    for path in paths:
+        draw_path(path, msp, svg_to_mm, color)
+
+def draw_path(path, msp, svg_to_mm=1.0, color=7):
+
+    # ===== 🔥 圆识别 =====
+    if is_circle_path(path):
+        draw_circle_path(path, msp, svg_to_mm, color)
+        return
+    # ===== 默认逻辑 =====
+    for seg in path.segments:
+        draw_path_segment(seg, msp, svg_to_mm, color)
+
+
+
+
 
 
 
@@ -186,3 +212,44 @@ def draw_image_rect(bbox, msp, svg_to_mm, role="bbox", color=7):
         },
         close=True
     )
+
+
+
+def draw_geometries(geoms, msp, svg_to_mm, color=7):
+    for g in geoms:
+        gtype = g["type"]
+        if gtype == "line":
+            x0, y0 = svg_to_mm(g["p0"])
+            x1, y1 = svg_to_mm(g["p1"])
+            msp.add_line(
+                (x0, y0),
+                (x1, y1),
+                dxfattribs={"color": color},
+            )
+            
+        elif gtype == "polyline":
+            pts_mm = [svg_to_mm(pt) for pt in g["points"]]
+            msp.add_lwpolyline(
+                pts_mm,
+                dxfattribs={
+                    "closed": g.get("closed", False),
+                    "color": color,
+                },
+            )
+            
+        elif gtype == "polygon":
+            contour_mm = [svg_to_mm(pt) for pt in g["points"]]
+            if len(contour_mm) < 3:
+                continue
+            # 强制闭合
+            if contour_mm[0] != contour_mm[-1]:
+                contour_mm = contour_mm + [contour_mm[0]]
+            # 只画轮廓
+            add_contour_outlines(
+                msp,
+                [contour_mm],
+                color=color
+            )
+            
+        else:
+            raise RuntimeError(f"Unknown geometry type: {gtype}")

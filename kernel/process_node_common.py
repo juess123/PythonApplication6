@@ -1,5 +1,4 @@
-﻿from semantic.rects_from_polygon import polygon_detect_rectangles
-from semantic.rects_from_lines import lines_dect_rects
+﻿
 from kernel.normalize import normalize_contours
 
 from stroke.stroke_dispatch import expand_contours_by_stroke

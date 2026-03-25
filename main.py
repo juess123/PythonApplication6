@@ -11,25 +11,17 @@ def svgTodxf():
     # 固定路径（调试用）
     svg_file = Path("./temp/svg/source.svg")
     out_dxf = Path("./temp/dxf/source.dxf")
-
     # 1️⃣ 构建 SVG 文档
     doc = build_svg_document(svg_file)
     #dump_svg_document(doc);
     # 2️⃣ 创建 DXF 文档
     dxf_doc = ezdxf.new("R2018")
     msp = dxf_doc.modelspace()
-
     # 3️⃣ 调度（把控制权交出去）
-   
     dispatch_from_first_g(doc, msp, color=7)
-  
-    
     # 4️⃣ 保存 DXF
-    
     out_dxf.parent.mkdir(parents=True, exist_ok=True)
     dxf_doc.saveas(out_dxf)
-   
- 
     #生成dwg文件
 ODA_EXE = r"C:\Program Files\ODA\ODAFileConverter 26.10.0\ODAFileConverter.exe"
 def dxfTodwg():
