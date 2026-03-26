@@ -1,7 +1,5 @@
 ﻿
 def init_svg_root_geometry(root_elem, svg_root):
-
-
     # ---------- viewBox ----------
     viewbox = root_elem.attrib.get("viewBox")
     if not viewbox:

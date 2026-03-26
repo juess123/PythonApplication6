@@ -56,7 +56,6 @@ def flatten_rotated_rect(elem):
     return True
 def flatten_rotated_rects(root_elem):
     fixed = 0
-
     for elem in root_elem.iter():
         if etree.QName(elem).localname != "rect":
             continue
@@ -69,4 +68,5 @@ def flatten_rotated_rects(root_elem):
             fixed += 1
 
     if fixed:
-        print(f"[CLEAN] flattened rotated rects = {fixed}")
+        pass
+        #print(f"[CLEAN] flattened rotated rects = {fixed}")

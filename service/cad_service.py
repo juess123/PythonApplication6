@@ -178,17 +178,16 @@ def process_cad_task(
             t0 = time.perf_counter()
             dxf_path = os.path.join(dxf_dir, "source.dxf")
             svg_to_dxf(local_svg_path, dxf_path)
-
             if not validate_file_exists(dxf_path, "DXF"):
                 raise FileNotFoundError("DXF 文件未生成")
             elapsed = time.perf_counter() - t0
-
             log.info(f"✅用时 {elapsed:.4f} 秒,SVG 转 DXF 成功: {dxf_path},")
-
+        # ✅ 超时会进入这里
+        except TimeoutError as e:
+            log.error(f"❌SVG 转 DXF 超时（超过1分钟）：{str(e)}")
+        # ✅ 其他错误也会进入这里
         except Exception as e:
-            log.error(f"SVG 转 DXF 失败: {e}")
-            cleanup_temp_files(temp_base, keep_files=settings.KEEP_TEMP_FILES)
-            return CadTaskResult(success=False, error_msg=f"SVG 转 DXF 失败: {str(e)}")
+            log.error(f"❌SVG 转 DXF 失败：{str(e)}")
 
         # ==================== 步骤 5: 转换 DXF 为 DWG ====================
         log.info("步骤 5/8: 转换 DXF 为 DWG")
@@ -313,7 +312,7 @@ def process_cad_task(
             log.info(f"PDF 上传 COS 成功: {uploaded_pdf_key}")
             #temp_base
             # ==================== 清理临时文件 ====================False
-            cleanup_temp_files(temp_base, keep_files=False)
+            cleanup_temp_files(temp_base, keep_files=True)
 
             # ==================== 返回成功结果 ====================
             log.info(f"CAD 转换流程完成: {order_id}")
