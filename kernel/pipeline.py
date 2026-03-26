@@ -47,7 +47,7 @@ def dispatch_from_first_g(doc, msp, color=7):
             effective_bbox = compute_image_effective_bbox(node, clip_geoms, global_clip)
             if not effective_bbox:
                 continue
-            draw_image_rect(effective_bbox, msp, svg_to_mm, color)
+            #draw_image_rect(effective_bbox, msp, svg_to_mm, color)
         else:
             continue
    
