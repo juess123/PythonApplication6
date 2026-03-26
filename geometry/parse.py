@@ -83,7 +83,7 @@ def make_point(x, y):
 
 def parse_path_d_multi(d):
 
-    tokens = re.findall(r"[MLCQZHVmlcqzhv]|-?\d+\.?\d*", d)
+    tokens = re.findall(r"""[MLCQZHVmlcqzhv]|[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?""", d, re.VERBOSE)
 
     paths = []
     current_segments = []

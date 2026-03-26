@@ -274,7 +274,7 @@ def parse_path_d_multi_to_contours(d):
         - 只有遇到 Z/z 才真正闭合
         - open path 绝不偷偷首尾相连
     """
-    tokens = re.findall(r"[MLCQZHVmlcqzhv]|-?\d+\.?\d*", d)
+    tokens = re.findall(r"""[MLCQZHVmlcqzhv] |[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?""", d, re.VERBOSE)
     paths = []
     current = []
 

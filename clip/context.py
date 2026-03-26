@@ -57,6 +57,11 @@ class ClipContext:
 
 
 class NoClipContext:
+    def __init__(self):
+        # 模拟 ClipContext 必要属性，防止 AttributeError
+        self.global_clip = []   # 空列表表示没有全局裁剪
+        self.clip_geoms = []    # 没有父 clip-path
+
     def apply(self, node, contours, on_inside, on_partial):
-    # 🚫 不裁剪，直接认为全部 inside
+        # 不裁剪，直接返回 contours 作为 inside
         return on_inside(contours)

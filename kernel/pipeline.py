@@ -1,6 +1,6 @@
 from svg.global_clip import find_global_clip_bbox
 from svg_model.geometry_builder import find_clip_geometries_from_defs
-from clip.context import ClipContext
+from clip.context import ClipContext,NoClipContext
 from kernel.node import process_path_node, process_polygon_node, process_rect_node, process_polyline_node, process_line_node,compute_image_effective_bbox
 from kernel.writer import draw_global_bbox_rect,draw_image_rect
 from svg_model.transform import make_svg_to_mm_transform
