@@ -93,7 +93,7 @@ def process_polygon_node(node, doc, msp, clip_ctx, svg_to_mm, color):
     if not needs_clipping(node, contours, clip_ctx):
         # ===== 矩形 =====
         if is_rectangle(points):
-            print("🔥 polygon -> rect")
+            #print("🔥 polygon -> rect")
             contour = points + [points[0]]  # 闭合
             strategy = resolve_render_strategy(node, doc)
             if strategy["use_fill"]:

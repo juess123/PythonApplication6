@@ -45,7 +45,7 @@ def flatten_rotated_rect(elem):
 
     x1, y1 = min(xs), min(ys)
     x2, y2 = max(xs), max(ys)
-    print(f"[RECT] x={x1:.6f}, y={y1:.6f}, w={(x2-x1):.6f}, h={(y2-y1):.6f}")
+
     # ✨ 重写 rect
     elem.attrib.pop("transform", None)
     elem.attrib["x"] = f"{x1:.6f}"
@@ -68,4 +68,5 @@ def flatten_rotated_rects(root_elem):
             fixed += 1
 
     if fixed:
-        print(f"[CLEAN] flattened rotated rects = {fixed}")
+        pass
+        #print(f"[CLEAN] flattened rotated rects = {fixed}")
