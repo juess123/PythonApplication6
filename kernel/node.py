@@ -31,7 +31,7 @@ def process_path_node(node, doc, msp, clip_ctx, svg_to_mm, color=7):
                 "points": c
             } for c in contours]
 
-            #draw_occlusion(geoms, msp, svg_to_mm)
+            draw_occlusion(geoms, msp, svg_to_mm)
         # 👉 保留高级语义
         draw_paths(paths, msp, svg_to_mm, color)
         return
@@ -39,8 +39,7 @@ def process_path_node(node, doc, msp, clip_ctx, svg_to_mm, color=7):
     geoms = normalize_contours(node,contours,clip_ctx,is_closed=path_is_closed(d))
     # 👉 fill → 先遮蔽
     if strategy["use_fill"]:
-        pass
-        #draw_occlusion(geoms, msp, svg_to_mm)
+        draw_occlusion(geoms, msp, svg_to_mm)
     # 👉 再画
     draw_geometries(geoms, msp, svg_to_mm)
     
@@ -160,13 +159,10 @@ def compute_image_effective_bbox(
     clip_geoms,
     global_clip_bbox,
 ):
-
     clip_id = resolve_clip_id(node)
     if not clip_id:
         return None
-
     contours = clip_geoms.get(clip_id)
-    
     if not contours:
         return None
     # image 的 clipPath 通常只有一个 contour
