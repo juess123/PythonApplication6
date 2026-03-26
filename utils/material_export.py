@@ -68,8 +68,9 @@ def export_material_json(
             if key in thickness_data:
                 com_sets_values.append(thickness_data[key])
             else:
+                pass
                 # 键不存在时的容错处理（可选：抛异常/填默认值/跳过）
-                print(f"警告：thickness_data中未找到键 {key}，已跳过该键")
+                #print(f"警告：thickness_data中未找到键 {key}，已跳过该键")
                 # 如果你想填默认值，取消下面注释：
                 # com_sets_values.append(0)
 
