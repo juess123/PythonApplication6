@@ -9,7 +9,7 @@ import time
 
 def svgTodxf():
     # 固定路径（调试用）
-    svg_file = Path("./temp/svg/source.svg")
+    svg_file = Path("./temp/svg/source9.svg")
     out_dxf = Path("./temp/dxf/source.dxf")
     # 1️⃣ 构建 SVG 文档
     doc = build_svg_document(svg_file)

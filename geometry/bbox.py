@@ -217,7 +217,50 @@ def is_rectangle(pts, angle_tol=1e-2, length_tol=1e-6):
 
 #s是否是圆
 
-def is_circle_path(path, tol=1.0):
+
+
+def sample_cubic_bezier(p0, p1, p2, p3, n=10):
+    """
+    在三次贝塞尔曲线上均匀采样 n+1 个点
+    """
+    if n <= 0:
+        return [p0, p3]
+
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        mt = 1 - t
+
+        x = (
+            mt**3 * p0[0]
+            + 3 * mt**2 * t * p1[0]
+            + 3 * mt * t**2 * p2[0]
+            + t**3 * p3[0]
+        )
+        y = (
+            mt**3 * p0[1]
+            + 3 * mt**2 * t * p1[1]
+            + 3 * mt * t**2 * p2[1]
+            + t**3 * p3[1]
+        )
+        pts.append((x, y))
+    return pts
+
+
+def is_circle_path(path,
+                   bbox_tol_ratio=0.08,
+                   radius_tol_ratio=0.08,
+                   sample_per_seg=8,
+                   min_radius=1.0):
+    """
+    判断一个 closed cubic bezier path 是否近似圆
+
+    参数：
+    - bbox_tol_ratio: 外接框宽高允许误差比例
+    - radius_tol_ratio: 半径波动允许比例
+    - sample_per_seg: 每段采样点数
+    - min_radius: 最小半径限制，防止极小噪声图元误判
+    """
     if not path.closed:
         return False
 
@@ -229,26 +272,56 @@ def is_circle_path(path, tol=1.0):
     if not all(s.type == "cubic_bezier" for s in segs):
         return False
 
-    # ===== 只取端点（关键！）=====
+    # 1) 采样整条曲线
     pts = []
-    for s in segs:
-        pts.append(s.p0)
-        pts.append(s.p3)
+    for seg in segs:
+        sampled = sample_cubic_bezier(seg.p0, seg.p1, seg.p2, seg.p3, n=sample_per_seg)
+        if pts:
+            sampled = sampled[1:]   # 避免段连接处重复点
+        pts.extend(sampled)
 
-    # ===== 求中心 =====
+    if len(pts) < 8:
+        return False
+
+    # 2) 看 bbox 是否接近正方形
     xs = [p[0] for p in pts]
     ys = [p[1] for p in pts]
 
-    cx = (min(xs) + max(xs)) / 2
-    cy = (min(ys) + max(ys)) / 2
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
 
-    # ===== 半径一致性 =====
+    w = max_x - min_x
+    h = max_y - min_y
+
+    if w <= 1e-6 or h <= 1e-6:
+        return False
+
+    wh_avg = (w + h) / 2.0
+    if abs(w - h) / wh_avg > bbox_tol_ratio:
+        return False
+
+    # 3) 用采样点平均值求中心，比 bbox 中心更稳一点
+    cx = sum(xs) / len(xs)
+    cy = sum(ys) / len(ys)
+
+    # 4) 所有采样点到中心的距离
     rs = [math.hypot(x - cx, y - cy) for x, y in pts]
     r_avg = sum(rs) / len(rs)
 
-    for r in rs:
-        if abs(r - r_avg) > tol:
-            return False
+    if r_avg < min_radius:
+        return False
+
+    r_min = min(rs)
+    r_max = max(rs)
+
+    # 半径波动不能太大
+    if (r_max - r_min) / r_avg > radius_tol_ratio:
+        return False
+
+    # 5) 再加一个兜底：平均半径应接近 bbox 推导出的半径
+    bbox_r = (w + h) / 4.0
+    if abs(r_avg - bbox_r) / max(r_avg, 1e-6) > 0.1:
+        return False
 
     return True
 # 提取圆参数

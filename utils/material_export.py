@@ -80,7 +80,6 @@ def export_material_json(
             "category_name_en": getattr(item, "category_name_en", ""),  # 容错：属性不存在时填空字符串
             "category_alias": item.category_alias,
             "com_sets": com_sets_values,  # 核心：替换为数值列表
-            
             "bbox": item.bbox
         })
         
