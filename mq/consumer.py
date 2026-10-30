@@ -69,8 +69,8 @@ class CadTaskConsumer:
             self._channel.queue_declare(queue=self._queue_name, durable=True)
 
             # ⭐⭐⭐ 启动时清空历史任务 ⭐⭐⭐
-            #log.warning(f"启动消费者，清空队列中的历史任务: {self._queue_name}")
-            #self._channel.queue_purge(queue=self._queue_name)
+            log.warning(f"启动消费者，清空队列中的历史任务: {self._queue_name}")
+            self._channel.queue_purge(queue=self._queue_name)
 
             log.info(f"RabbitMQ 连接成功，监听队列: {self._queue_name}")
             return True
@@ -106,7 +106,7 @@ class CadTaskConsumer:
             properties: 消息属性
             body: 消息体
         """
-        order_id = "unknown"
+        order_id = ""
         callback_url = None
         page_id = None
 
@@ -134,6 +134,7 @@ class CadTaskConsumer:
             callback_url = payload.cad_call_back_url
             page_id = payload.page_id
             thickness_data = payload.thickness_data
+            billing_order_id = payload.billing_order_id or ""
 
             log.info(
                 f"开始处理任务: task_id={task.id}, order_id={order_id}, "
@@ -149,11 +150,12 @@ class CadTaskConsumer:
                 position=payload.position,
                 material_data=payload.material_data,
                 order_id=payload.order_id,
-                thickness_data=thickness_data
+                thickness_data=thickness_data,
+                billing_order_id=billing_order_id
             )
             end = time.perf_counter() - start;
             # 发送回调通知
-            if callback_url:
+            if order_id and callback_url:
                 notify_callback(
                     callback_url=callback_url,
                     order_id=order_id,
@@ -189,7 +191,7 @@ class CadTaskConsumer:
             )
 
             # 尝试发送失败回调
-            if callback_url:
+            if order_id and callback_url:
                 try:
                     notify_callback(
                         callback_url=callback_url,

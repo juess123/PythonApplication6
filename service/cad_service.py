@@ -8,6 +8,7 @@ CAD 处理服务（同步版本）
 import os
 import shutil
 import time
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,7 @@ from converters.SvgToDxf import svg_to_dxf
 from core.config import settings
 from core.cos_client import get_cos_client
 from mq.models import MaterialItem, PositionItem
+from service.billing_client import complete_billing_order
 from svg_model.builder import get_svg_size_mm
 from utils.generate_scr import generate_run_scr
 from utils.material_export import export_material_json
@@ -79,8 +81,49 @@ def process_cad_task(
     svg_key: str,
     position: List[PositionItem],
     material_data: List[MaterialItem],
+    order_id: Optional[str],
+    thickness_data: dict,
+    billing_order_id: Optional[str] = None,
+) -> CadTaskResult:
+    """Run CAD processing and report billing completion only for identified tasks."""
+    normalized_order_id = (order_id or "").strip()
+    result = _process_cad_task_impl(
+        svg_key=svg_key,
+        position=position,
+        material_data=material_data,
+        order_id=normalized_order_id or f"cad-{uuid.uuid4().hex}",
+        thickness_data=thickness_data,
+    )
+
+    normalized_billing_order_id = (billing_order_id or "").strip()
+    if normalized_order_id and normalized_billing_order_id:
+        billing_notified = complete_billing_order(
+            billing_order_id=normalized_billing_order_id,
+            success=result.success,
+        )
+    else:
+        billing_notified = True
+
+    if normalized_order_id and normalized_billing_order_id and not billing_notified:
+        log.error(
+            "CAD 任务已结束，但计费完成通知未确认: order_id={}, billing_order_id={}",
+            normalized_order_id,
+            normalized_billing_order_id,
+        )
+    elif not normalized_order_id:
+        log.info("order_id 为空，跳过所有回调通知")
+    elif not normalized_billing_order_id:
+        log.warning("billing_order_id 为空，跳过计费完成回调: order_id={}", normalized_order_id)
+
+    return result
+
+
+def _process_cad_task_impl(
+    svg_key: str,
+    position: List[PositionItem],
+    material_data: List[MaterialItem],
     order_id: str,
-    thickness_data: dict
+    thickness_data: dict,
 ) -> CadTaskResult:
     """
     处理 CAD 转换任务：SVG -> DXF -> DWG -> PDF -> PNG -> COS

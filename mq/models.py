@@ -46,7 +46,8 @@ class CadTaskPayload(BaseModel):
     material_data: List[MaterialItem] = Field(
         default_factory=list, description="材料数据列表"
     )
-    order_id: str = Field(..., description="订单ID")
+    order_id: Optional[str] = Field(None, description="订单ID；为空时不发送回调")
+    billing_order_id: Optional[str] = Field(None, description="计费系统订单ID")
     thickness_data: dict
     page_id: str = Field(..., description="页面ID")
     cad_call_back_url: str = Field(..., description="回调通知URL")

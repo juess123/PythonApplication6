@@ -37,6 +37,12 @@ class Settings(BaseSettings):
     CALLBACK_TIMEOUT: float = 30.0  # 回调请求超时时间（秒）
     CALLBACK_MAX_RETRIES: int = 3  # 回调最大重试次数
 
+    # ========== 计费服务配置 ==========
+    BILLING_BASE_URL: str = "http://192.168.2.191:18099"
+    BILLING_SERVICE_TOKEN: str = ""
+    BILLING_CALLBACK_TIMEOUT: float = 30.0
+    BILLING_CALLBACK_MAX_RETRIES: int = 3
+
 
 @lru_cache
 def get_settings() -> Settings:
